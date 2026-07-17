@@ -1,0 +1,19 @@
+{
+  "name": "howlcard",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Config-driven OpenGraph card generator on Cloudflare Workers",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @howlcard/web",
+    "deploy": "npm run deploy --workspace @howlcard/web",
+    "check": "npm run check --workspaces --if-present",
+    "check-types": "npm run check-types --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}
