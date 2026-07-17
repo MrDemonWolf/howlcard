@@ -1,0 +1,22 @@
+{
+  "name": "@howlcard/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@howlcard/core": "*",
+    "@resvg/resvg-wasm": "^2.6.2",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250705.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.20.0"
+  }
+}
