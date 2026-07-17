@@ -1,30 +1,28 @@
-// The three starter templates, ported pixel-identical (under the default
-// theme) from mrdemonwolf/website apps/website/src/og/render.ts. Every
-// template is a pure function (opts, theme) => svg string; rasterization
-// happens in the app layer, never here.
-import type { Theme } from "./theme";
+// One preset per PAGE TYPE on mrdemonwolf.com. The design is decided by the
+// type (blog post / service / portfolio project / site default); there is no
+// separate theme picker. SVG geometry ported pixel-identical from the
+// website's build-time renderer (apps/website/src/og/render.ts).
+import { BRAND, type Theme } from "./theme";
 import { esc, wrapTitle, chip, titleLines, WOLF_PATH, wolfBadge } from "./svg";
 
-export type TemplateOpts = {
+export type CardOpts = {
   title?: string;
-  /** blog: category chip. project: tag chip. */
+  /** chip text: blog category, service name, or project tag */
   label?: string;
-  /** data: URI or empty; the app layer resolves URLs to data URIs */
+  /** data: URI, resolved by the app layer */
   image?: string;
-  /** project template eyebrow, defaults to "The build" */
-  eyebrow?: string;
 };
 
-export type Template = {
+export type PageType = {
   name: string;
   description: string;
-  fields: (keyof TemplateOpts)[];
-  render: (opts: TemplateOpts, theme: Theme) => string;
+  fields: ("title" | "label" | "image")[];
+  render: (opts: CardOpts, theme?: Theme) => string;
 };
 
 const FRAME = `<clipPath id="frame"><rect x="0" y="0" width="1200" height="630"/></clipPath>`;
 
-function renderDefault(_opts: TemplateOpts, t: Theme): string {
+function renderDefault(_opts: CardOpts, t: Theme = BRAND): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <path id="wpath" d="${WOLF_PATH}" fill="${t.accent}"/>
@@ -44,7 +42,7 @@ function renderDefault(_opts: TemplateOpts, t: Theme): string {
 </svg>`;
 }
 
-function renderBlog(opts: TemplateOpts, t: Theme): string {
+function renderBlog(opts: CardOpts, t: Theme = BRAND): string {
   const img = opts.image || null;
   const lines = wrapTitle(opts.title || "Untitled");
   // Two-line titles need a taller panel + a chip pushed up so they don't collide.
@@ -71,7 +69,14 @@ function renderBlog(opts: TemplateOpts, t: Theme): string {
 </svg>`;
 }
 
-function renderProject(opts: TemplateOpts, t: Theme): string {
+// Shared geometry for the eyebrow cards (portfolio + service): only the
+// eyebrow text and byline differ.
+function renderEyebrow(
+  opts: CardOpts,
+  eyebrow: string,
+  bylinePrefix: string,
+  t: Theme = BRAND,
+): string {
   const img = opts.image || null;
   const lines = wrapTitle(opts.title || "Untitled");
   const bylineY = lines.length > 1 ? 600 : 588;
@@ -87,30 +92,36 @@ function renderProject(opts: TemplateOpts, t: Theme): string {
     <polygon points="0,0 184,0 0,184" fill="${t.accent}"/>
     ${opts.label ? chip(opts.label, 1152, 56, t, "end") : ""}
     <polygon points="0,436 1200,376 1200,630 0,630" fill="${t.bg}" fill-opacity="0.95"/>
-    <text x="48" y="${firstBaseline - 44}" font-family="DM Sans" font-size="26" font-weight="600" fill="${t.accent}">${esc(opts.eyebrow || "The build")}</text>
+    <text x="48" y="${firstBaseline - 44}" font-family="DM Sans" font-size="26" font-weight="600" fill="${t.accent}">${esc(eyebrow)}</text>
     ${titleLines(lines, 48, titleBaseline, t)}
-    <text x="48" y="${bylineY}" font-family="DM Sans" font-size="26" fill="${t.text}" fill-opacity="0.65">${esc("Portfolio · " + t.site)}</text>
+    <text x="48" y="${bylineY}" font-family="DM Sans" font-size="26" fill="${t.text}" fill-opacity="0.65">${esc(`${bylinePrefix} · ${t.site}`)}</text>
   </g>
 </svg>`;
 }
 
-export const TEMPLATES: Record<string, Template> = {
-  default: {
-    name: "default",
-    description: "Brand howl card (no dynamic content)",
-    fields: [],
-    render: renderDefault,
-  },
+export const PAGE_TYPES: Record<string, PageType> = {
   blog: {
     name: "blog",
-    description: "Post card: photo background, category chip, wrapped title, byline",
+    description: "Blog post (photo, category chip, title, byline)",
     fields: ["title", "label", "image"],
     render: renderBlog,
   },
-  project: {
-    name: "project",
-    description: "Case-study card: eyebrow, tag chip right, wrapped title",
-    fields: ["title", "label", "image", "eyebrow"],
-    render: renderProject,
+  portfolio: {
+    name: "portfolio",
+    description: "Portfolio project (The build eyebrow, tag chip)",
+    fields: ["title", "label", "image"],
+    render: (o, t) => renderEyebrow(o, "The build", "Portfolio", t),
+  },
+  service: {
+    name: "service",
+    description: "Service page (Services eyebrow, service chip)",
+    fields: ["title", "label", "image"],
+    render: (o, t) => renderEyebrow(o, "Services", "MrDemonWolf, Inc.", t),
+  },
+  default: {
+    name: "default",
+    description: "Site default (brand howl card, no fields)",
+    fields: [],
+    render: renderDefault,
   },
 };

@@ -1,89 +1,74 @@
-# HowlCard - OpenGraph Cards Rendered on the Edge
+# MrDemonWolf OG Tool - OpenGraph Cards in Your Browser
 
-HowlCard is a config-driven OpenGraph card generator that renders
-1200x630 PNG social cards on Cloudflare Workers. Templates are pure
-TypeScript functions that emit SVG, themes carry every brand value
-(colors, fonts, byline), and a built-in playground lets you preview
-and download cards or point `og:image` straight at a URL. Extracted
-from the build-time card system on mrdemonwolf.com.
+MrDemonWolf OG Tool generates 1200x630 OpenGraph social cards for
+mrdemonwolf.com, rendered entirely in the browser and hosted as a
+static site on GitHub Pages. Paste a blog, service, or portfolio URL
+and it pulls the title, category, and featured image through the
+WordPress REST API; the card design follows the page type
+automatically. Extracted from the build-time card system on
+mrdemonwolf.com.
 
 Design in code. Ship cards that howl.
 
 ## Features
 
-- **Three starter templates** - `default` (brand howl card), `blog`
-  (photo background, category chip, wrapped title, byline), and
-  `project` (eyebrow, tag chip, case-study framing), ported
-  pixel-identical from mrdemonwolf.com.
-- **Themes over hardcoding** - every color and text value lives in a
-  `Theme`; four built in (`default`, `ember`, `forest`, `mono`), new
-  ones are a single object in `packages/core/src/theme.ts`.
-- **Edge rendering** - `@resvg/resvg-wasm` rasterizes SVG to PNG
-  inside the Worker; no native binaries, no build step per card.
-- **Playground** - the Worker's `/` route serves a live editor: pick
-  template and theme, type the fields, preview, download.
-- **URL API** - `/og.png?template=blog&theme=default&title=...` is a
-  stable image URL you can use directly in `og:image` tags.
-- **Remote image embedding** - `image=` query param fetches a photo
-  server-side (no Referer, so hotlink-protected hosts work) and
-  embeds it; failures fall back to the text-only card.
+- **Page-type presets** - the design is decided by what the page is:
+  `blog` (photo, category chip, wrapped title, byline), `portfolio`
+  (The build eyebrow, tag chip), `service` (Services eyebrow), and
+  `default` (brand howl card). No theme fiddling.
+- **Pull from URL** - paste a mrdemonwolf.com URL; the tool detects
+  the page type from the path and fills title, chip label, and
+  featured image via the WordPress REST API (CORS-open by default).
+- **Browser rendering** - `@resvg/resvg-wasm` rasterizes SVG to PNG
+  client-side; nothing leaves your machine, no server to deploy.
+- **Image drop fallback** - WordPress media files usually block
+  cross-origin fetches, so the tool accepts a dropped or chosen
+  image file whenever the direct fetch fails.
+- **Static deploy** - plain Vite build pushed to GitHub Pages by the
+  bundled Actions workflow on every push to `main`.
 
 ## Getting Started
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/mrdemonwolf/howlcard.git
-   cd howlcard
+   git clone https://github.com/mrdemonwolf/mrdemonwolf-og-tool.git
+   cd mrdemonwolf-og-tool
    ```
 2. Install dependencies:
    ```bash
    npm install
    ```
-3. Start the local playground:
+3. Start the dev server:
    ```bash
    npm run dev
    ```
-4. Open `http://localhost:8787` and build a card.
+4. Open the printed localhost URL and build a card.
 
 ## Usage
 
-Render a card by URL (all params optional except `template` fields):
+1. Paste a page URL (for example
+   `https://www.mrdemonwolf.com/blog/my-post/`) and click **Pull**.
+2. Adjust the title or chip label if wanted; the preview re-renders
+   as you type.
+3. If the featured image could not be fetched (most WordPress hosts
+   block cross-origin media reads), save it from the site and drop
+   the file onto the image box.
+4. Click **Download PNG** and upload the file to WordPress (Rank
+   Math social image, or the media library).
 
-```bash
-# Brand card, default theme
-/og.png?template=default
-
-# Blog card with a category chip and a background photo
-/og.png?template=blog&theme=default&title=My%20Post%20Title&label=WordPress&image=https://example.com/photo.jpg
-
-# Project card with the "The build" eyebrow and a tag chip
-/og.png?template=project&title=Aurum%20Contracting&label=WordPress
-```
-
-Point a page's OpenGraph tag at the deployed Worker:
-
-```html
-<meta property="og:image" content="https://howlcard.<your-subdomain>.workers.dev/og.png?template=blog&title=Hello" />
-```
-
-Endpoints:
-
-| Route     | Purpose                                        |
-| --------- | ---------------------------------------------- |
-| `/`       | Playground (template picker, preview, download) |
-| `/og.png` | PNG renderer (query-param driven)              |
-| `/health` | JSON status and template list                  |
+The live tool deploys to
+`https://mrdemonwolf.github.io/mrdemonwolf-og-tool/`.
 
 ## Tech Stack
 
-| Layer      | Technology                        |
-| ---------- | --------------------------------- |
-| Runtime    | Cloudflare Workers                |
-| Framework  | Hono                              |
-| Rendering  | @resvg/resvg-wasm (SVG to PNG)    |
-| Templates  | TypeScript SVG functions          |
-| Fonts      | DM Sans, JetBrains Mono (vendored TTF) |
-| Tooling    | npm workspaces, Wrangler, tsx     |
+| Layer     | Technology                                 |
+| --------- | ------------------------------------------ |
+| Hosting   | GitHub Pages (Actions deploy)              |
+| Bundler   | Vite                                       |
+| Rendering | @resvg/resvg-wasm (SVG to PNG, in-browser) |
+| Data      | WordPress REST API (`/wp-json/wp/v2/`)     |
+| Templates | TypeScript SVG functions                   |
+| Fonts     | DM Sans, JetBrains Mono (vendored TTF)     |
 
 ## Development
 
@@ -91,7 +76,6 @@ Endpoints:
 
 - Node.js 20 or newer
 - npm 10 or newer
-- A Cloudflare account (for `npm run deploy`)
 
 ### Setup
 
@@ -110,44 +94,40 @@ Endpoints:
 
 ### Development Scripts
 
-- `npm run dev` - Wrangler dev server for the playground and API
-- `npm run deploy` - deploy the Worker to Cloudflare
-- `npm run check` - type-check all workspaces and run the core
-  self-check (renders every template under every theme)
+- `npm run dev` - Vite dev server
+- `npm run build` - production build into `dist/`
+- `npm run preview` - serve the production build locally
+- `npm run check` - type-check and run the template self-check
 - `npm run check-types` - type-check only
 
 ### Code Quality
 
-- Strict TypeScript across both workspaces
-- A runnable self-check in `@howlcard/core` guards template output
-  (well-formed SVG, theme colors present, escaping, title wrapping)
+- Strict TypeScript
+- A runnable self-check renders every page type and guards
+  well-formed SVG, escaping, eyebrow text, and title wrapping
 - Fonts load as buffers, never file paths (resvg renders no text on
   a missed path)
 
 ## Project Structure
 
 ```
-howlcard/
-├── apps/
-│   └── web/               # Cloudflare Worker (Hono)
-│       ├── src/
-│       │   ├── index.ts     # routes: /, /og.png, /health
-│       │   ├── render.ts    # resvg-wasm rasterizer + image fetcher
-│       │   ├── playground.ts # served playground page
-│       │   └── fonts/       # vendored TTFs (DM Sans, JetBrains Mono)
-│       └── wrangler.jsonc
-└── packages/
-    └── core/              # pure template + theme engine (no I/O)
-        └── src/
-            ├── templates.ts # default / blog / project
-            ├── theme.ts     # Theme type + built-in themes
-            ├── svg.ts       # esc, wrapTitle, chip, wolf mark
-            └── selfcheck.ts # runnable output guard
+mrdemonwolf-og-tool/
+├── index.html             # the app shell (form + preview)
+├── src/
+│   ├── main.ts              # UI wiring: pull, drop, render, download
+│   ├── templates.ts         # page-type presets (blog/portfolio/service/default)
+│   ├── theme.ts             # brand values (v6 Brand Blues)
+│   ├── svg.ts               # esc, wrapTitle, chip, wolf mark
+│   ├── wp.ts                # WordPress REST pull by URL
+│   ├── render.ts            # resvg-wasm rasterizer + image helpers
+│   ├── selfcheck.ts         # runnable template guard
+│   └── fonts/               # vendored TTFs
+└── .github/workflows/pages.yml  # build + deploy to GitHub Pages
 ```
 
 ## License
 
-![GitHub license](https://img.shields.io/github/license/mrdemonwolf/howlcard.svg?style=for-the-badge&logo=github)
+![GitHub license](https://img.shields.io/github/license/mrdemonwolf/mrdemonwolf-og-tool.svg?style=for-the-badge&logo=github)
 
 ## Contact
 
