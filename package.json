@@ -1,19 +1,23 @@
 {
-  "name": "howlcard",
+  "name": "mrdemonwolf-og-tool",
   "private": true,
-  "version": "0.1.0",
-  "description": "Config-driven OpenGraph card generator on Cloudflare Workers",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "version": "0.2.0",
+  "description": "OpenGraph card generator for mrdemonwolf.com, static on GitHub Pages",
+  "type": "module",
   "scripts": {
-    "dev": "npm run dev --workspace @howlcard/web",
-    "deploy": "npm run deploy --workspace @howlcard/web",
-    "check": "npm run check --workspaces --if-present",
-    "check-types": "npm run check-types --workspaces --if-present"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit && tsx src/selfcheck.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@resvg/resvg-wasm": "^2.6.2"
   },
   "devDependencies": {
-    "typescript": "^5.8.0"
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vite": "^6.0.0"
   }
 }
