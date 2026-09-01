@@ -51,6 +51,34 @@ export function fileToDataUri(file: File): Promise<string> {
   });
 }
 
+// Logos arrive as SVG about as often as PNG, and resvg's nested-SVG support in
+// `<image>` is not something to bet the card render on. Flatten SVG to a PNG
+// data URI through a canvas first; every other type passes straight through.
+export async function logoFileToDataUri(file: File, size = 512): Promise<string> {
+  const raw = await fileToDataUri(file);
+  const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+  if (!isSvg) return raw;
+
+  const img = new Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("That SVG could not be decoded."));
+    img.src = raw;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return raw;
+  // An SVG with only a viewBox reports no intrinsic size in some browsers;
+  // fall back to a square box so it still lands centred.
+  const w = img.naturalWidth || size;
+  const h = img.naturalHeight || size;
+  const scale = Math.min(size / w, size / h);
+  ctx.drawImage(img, (size - w * scale) / 2, (size - h * scale) / 2, w * scale, h * scale);
+  return canvas.toDataURL("image/png");
+}
+
 // Try to fetch a remote image into a data URI. WordPress media files usually
 // ship no CORS headers, so this often fails from the browser; the caller
 // falls back to asking for a local file drop.

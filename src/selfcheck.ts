@@ -32,4 +32,29 @@ assert(long[1].endsWith("…"), "long title not truncated");
 const svg = PAGE_TYPES.blog.render({ title: `<script>"x" & 'y'</script>` });
 assert(!svg.includes("<script>"), "title not escaped");
 
+// Logo path: a data: URI takes the mark slot, anything else is ignored.
+const PNG = "data:image/png;base64,iVBORw0KGgo=";
+const withLogo = PAGE_TYPES.blog.render({ title: "X", logo: PNG });
+assert(withLogo.includes(`<image href="${PNG}"`), "blog: logo not embedded");
+assert(!withLogo.includes("M22 38 L12 22"), "blog: wolf badge still drawn under a logo");
+assert(PAGE_TYPES.blog.render({ title: "X" }).includes("M22 38 L12 22"), "blog: wolf badge lost");
+
+const defLogo = PAGE_TYPES.default.render({ logo: PNG });
+assert(defLogo.includes(`<image href="${PNG}"`), "default: logo watermark missing");
+assert(!defLogo.includes(`<use href="#wpath"`), "default: wolf watermark still drawn");
+
+for (const name of ["portfolio", "service"] as const) {
+  const bare = PAGE_TYPES[name].render({ title: "X" });
+  assert(!bare.includes(`href="#mk"`), `${name}: mark drawn without a logo`);
+  assert(PAGE_TYPES[name].render({ title: "X", logo: PNG }).includes(`href="#mk"`),
+    `${name}: logo mark missing`);
+}
+
+for (const bad of ["javascript:alert(1)", "https://evil.test/x.png"]) {
+  for (const name of Object.keys(PAGE_TYPES)) {
+    assert(!PAGE_TYPES[name].render({ title: "X", logo: bad }).includes(bad),
+      `${name}: non-data logo href leaked into the SVG`);
+  }
+}
+
 console.log("selfcheck OK:", Object.keys(PAGE_TYPES).length, "page types");

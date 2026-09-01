@@ -2,7 +2,7 @@
 
 MrDemonWolf OG Tool generates 1200x630 OpenGraph social cards for
 mrdemonwolf.com, rendered entirely in the browser and hosted as a
-static site on GitHub Pages. Paste a blog, service, or portfolio URL
+static site on Cloudflare Workers. Paste a blog, service, or portfolio URL
 and it pulls the title, category, and featured image through the
 WordPress REST API; the card design follows the page type
 automatically. Extracted from the build-time card system on
@@ -24,8 +24,15 @@ Design in code. Ship cards that howl.
 - **Image drop fallback** - WordPress media files usually block
   cross-origin fetches, so the tool accepts a dropped or chosen
   image file whenever the direct fetch fails.
-- **Static deploy** - plain Vite build pushed to GitHub Pages by the
-  bundled Actions workflow on every push to `main`.
+- **Logo or site icon** - the wolf mark is only the fallback. The pull
+  reads `site_icon_url` from the WordPress REST index, and an SVG or
+  PNG logo can be dropped in directly (SVG is flattened to PNG in a
+  canvas first, since resvg rasterizes the card). Portfolio and
+  service cards, which carry no mark by default, gain one when a logo
+  is set. **Reset to wolf mark** puts it back.
+- **Static deploy** - plain Vite build served from Cloudflare Workers
+  static assets, gated by Cloudflare Access, deployed by the bundled
+  Actions workflow on every push to `main`.
 
 ## Getting Started
 
@@ -36,11 +43,11 @@ Design in code. Ship cards that howl.
    ```
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 3. Start the dev server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 4. Open the printed localhost URL and build a card.
 
@@ -53,17 +60,20 @@ Design in code. Ship cards that howl.
 3. If the featured image could not be fetched (most WordPress hosts
    block cross-origin media reads), save it from the site and drop
    the file onto the image box.
-4. Click **Download PNG** and upload the file to WordPress (Rank
+4. To brand the card with something other than the wolf mark, drop an
+   SVG or PNG logo on the **Logo / site icon** box. The pull fills this
+   automatically when the site allows the icon to be read cross-origin.
+5. Click **Download PNG** and upload the file to WordPress (Rank
    Math social image, or the media library).
 
-The live tool deploys to
-`https://mrdemonwolf.github.io/mrdemonwolf-og-tool/`.
+The live tool deploys to `https://og.mrdemonwolf.com` and sits behind
+Cloudflare Access, so you sign in before the page loads.
 
 ## Tech Stack
 
 | Layer     | Technology                                 |
 | --------- | ------------------------------------------ |
-| Hosting   | GitHub Pages (Actions deploy)              |
+| Hosting   | Cloudflare Workers static assets + Access  |
 | Bundler   | Vite                                       |
 | Rendering | @resvg/resvg-wasm (SVG to PNG, in-browser) |
 | Data      | WordPress REST API (`/wp-json/wp/v2/`)     |
@@ -74,31 +84,31 @@ The live tool deploys to
 
 ### Prerequisites
 
-- Node.js 20 or newer
-- npm 10 or newer
+- Bun 1.2 or newer
 
 ### Setup
 
 1. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 2. Run the checks:
    ```bash
-   npm run check
+   bun run check
    ```
 3. Start the dev server:
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 ### Development Scripts
 
-- `npm run dev` - Vite dev server
-- `npm run build` - production build into `dist/`
-- `npm run preview` - serve the production build locally
-- `npm run check` - type-check and run the template self-check
-- `npm run check-types` - type-check only
+- `bun run dev` - Vite dev server
+- `bun run build` - production build into `dist/`
+- `bun run preview` - serve the production build locally
+- `bun run check` - type-check and run the template self-check
+- `bun run check-types` - type-check only
+- `bun run deploy` - build and publish to Cloudflare Workers
 
 ### Code Quality
 
@@ -122,7 +132,8 @@ mrdemonwolf-og-tool/
 │   ├── render.ts            # resvg-wasm rasterizer + image helpers
 │   ├── selfcheck.ts         # runnable template guard
 │   └── fonts/               # vendored TTFs
-└── .github/workflows/pages.yml  # build + deploy to GitHub Pages
+├── wrangler.jsonc            # Workers static-assets config
+└── .github/workflows/deploy.yml # build + deploy to Cloudflare Workers
 ```
 
 ## License

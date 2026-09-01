@@ -30,6 +30,10 @@
     .drop { border:1.5px dashed rgba(255,255,255,.25); border-radius:10px; padding:12px;
       text-align:center; font-size:13px; color:var(--sub); cursor:pointer; }
     .drop.armed { border-color:var(--accent); color:var(--text); }
+    .ghost { background:transparent; color:var(--sub); border:1px solid rgba(255,255,255,.16); font-weight:600; }
+    .ghost:hover { color:var(--text); border-color:var(--accent); }
+    .logorow { display:flex; align-items:center; gap:10px; margin-top:6px; }
+    .logorow img { width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,.06); object-fit:contain; }
     .preview { background:var(--panel); border-radius:14px; padding:18px; }
     .preview img { width:100%; border-radius:10px; display:block; background:#0008; min-height:200px; }
     .row { display:flex; gap:10px; margin-top:14px; }
@@ -66,6 +70,16 @@
           <div class="drop" id="drop">Drop an image here or click to choose.<br />(Used when the site blocks direct image fetches.)</div>
           <input id="file" type="file" accept="image/*" class="hide" />
           <div class="note" id="imgnote"></div>
+        </div>
+        <div data-f="logo">
+          <label>Logo / site icon</label>
+          <div class="drop" id="logodrop">Drop an SVG or PNG logo, or click to choose.<br />(Pulled from the site icon when the URL allows it.)</div>
+          <input id="logofile" type="file" accept="image/svg+xml,image/*" class="hide" />
+          <div class="logorow">
+            <img id="logoprev" alt="" class="hide" />
+            <button id="logoclear" type="button" class="ghost hide">Reset to wolf mark</button>
+          </div>
+          <div class="note" id="logonote"></div>
         </div>
       </form>
       <div class="preview">

@@ -2,12 +2,13 @@
   "name": "mrdemonwolf-og-tool",
   "private": true,
   "version": "0.2.0",
-  "description": "OpenGraph card generator for mrdemonwolf.com, static on GitHub Pages",
+  "description": "OpenGraph card generator for mrdemonwolf.com, static on Cloudflare Workers",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "deploy": "bun run build && wrangler deploy",
     "check": "tsc --noEmit && tsx src/selfcheck.ts",
     "check-types": "tsc --noEmit"
   },
@@ -18,6 +19,7 @@
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "wrangler": "^4.0.0"
   }
 }

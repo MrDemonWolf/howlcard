@@ -73,6 +73,19 @@ export function titleLines(lines: string[], x: number, lastBaseline: number, the
 export const WOLF_PATH =
   "M80 148 L48 122 L34 92 L22 58 L46 52 L24 14 L62 46 L80 38 L98 46 L136 14 L114 52 L138 58 L126 92 L112 122 Z";
 
+// A supplied logo takes the wolf badge's slot. Same id and 44x44 box, so every
+// template's existing `<use href="#mk">` transform keeps working untouched.
+// Only data: URIs are accepted - a remote href would make resvg try a network
+// fetch at render time, and anything else in that attribute is untrusted input.
+export function logoBadge(href: string): string {
+  return (
+    `<g id="mk"><image href="${esc(href)}" x="0" y="0" width="44" height="44" ` +
+    `preserveAspectRatio="xMidYMid meet"/></g>`
+  );
+}
+
+export const isEmbeddableImage = (href: string) => href.startsWith("data:image/");
+
 export function wolfBadge(theme: Theme): string {
   return (
     `<g id="mk"><rect width="44" height="44" rx="9" fill="${theme.accent}"/>` +

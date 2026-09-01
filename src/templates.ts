@@ -3,7 +3,16 @@
 // separate theme picker. SVG geometry ported pixel-identical from the
 // website's build-time renderer (apps/website/src/og/render.ts).
 import { BRAND, type Theme } from "./theme";
-import { esc, wrapTitle, chip, titleLines, WOLF_PATH, wolfBadge } from "./svg";
+import {
+  esc,
+  wrapTitle,
+  chip,
+  titleLines,
+  WOLF_PATH,
+  wolfBadge,
+  logoBadge,
+  isEmbeddableImage,
+} from "./svg";
 
 export type CardOpts = {
   title?: string;
@@ -11,18 +20,25 @@ export type CardOpts = {
   label?: string;
   /** data: URI, resolved by the app layer */
   image?: string;
+  /** data: URI for a logo that replaces the wolf mark (site icon or upload) */
+  logo?: string;
 };
+
+// The wolf mark is the fallback; a pulled site icon or an uploaded logo wins.
+const markFor = (opts: CardOpts, t: Theme) =>
+  opts.logo && isEmbeddableImage(opts.logo) ? logoBadge(opts.logo) : wolfBadge(t);
 
 export type PageType = {
   name: string;
   description: string;
-  fields: ("title" | "label" | "image")[];
+  fields: ("title" | "label" | "image" | "logo")[];
   render: (opts: CardOpts, theme?: Theme) => string;
 };
 
 const FRAME = `<clipPath id="frame"><rect x="0" y="0" width="1200" height="630"/></clipPath>`;
 
-function renderDefault(_opts: CardOpts, t: Theme = BRAND): string {
+function renderDefault(opts: CardOpts, t: Theme = BRAND): string {
+  const logo = opts.logo && isEmbeddableImage(opts.logo) ? opts.logo : null;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <path id="wpath" d="${WOLF_PATH}" fill="${t.accent}"/>
@@ -33,7 +49,11 @@ function renderDefault(_opts: CardOpts, t: Theme = BRAND): string {
     <circle cx="1120" cy="314" r="240" fill="none" stroke="${t.accent}" stroke-opacity="0.14" stroke-width="3"/>
     <circle cx="1120" cy="314" r="340" fill="none" stroke="${t.accent}" stroke-opacity="0.10" stroke-width="3"/>
     <circle cx="1120" cy="314" r="440" fill="none" stroke="${t.accent}" stroke-opacity="0.07" stroke-width="3"/>
-    <use href="#wpath" transform="translate(860,64) scale(2.9)" opacity="0.18"/>
+    ${
+      logo
+        ? `<image href="${esc(logo)}" x="880" y="164" width="300" height="300" preserveAspectRatio="xMidYMid meet" opacity="0.18"/>`
+        : `<use href="#wpath" transform="translate(860,64) scale(2.9)" opacity="0.18"/>`
+    }
     <text x="84" y="300" font-family="DM Sans" font-size="84" font-weight="600" fill="${t.text}">${esc(t.brand)}</text>
     <rect x="86" y="322" width="150" height="8" rx="4" fill="${t.accent}"/>
     <text x="86" y="392" font-family="DM Sans" font-size="34" fill="${t.subtext}">${esc(t.tagline)}</text>
@@ -53,7 +73,7 @@ function renderBlog(opts: CardOpts, t: Theme = BRAND): string {
   const titleBaseline = bylineY - 44;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    ${wolfBadge(t)}
+    ${markFor(opts, t)}
     ${FRAME}
   </defs>
   <g clip-path="url(#frame)">
@@ -82,8 +102,10 @@ function renderEyebrow(
   const bylineY = lines.length > 1 ? 600 : 588;
   const titleBaseline = bylineY - 44;
   const firstBaseline = titleBaseline - (lines.length - 1) * 56;
+  const mark = opts.logo && isEmbeddableImage(opts.logo) ? logoBadge(opts.logo) : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
+    ${mark}
     ${FRAME}
   </defs>
   <g clip-path="url(#frame)">
@@ -92,6 +114,7 @@ function renderEyebrow(
     <polygon points="0,0 184,0 0,184" fill="${t.accent}"/>
     ${opts.label ? chip(opts.label, 1152, 56, t, "end") : ""}
     <polygon points="0,436 1200,376 1200,630 0,630" fill="${t.bg}" fill-opacity="0.95"/>
+    ${mark ? `<use href="#mk" transform="translate(1090,516) scale(1.4)"/>` : ""}
     <text x="48" y="${firstBaseline - 44}" font-family="DM Sans" font-size="26" font-weight="600" fill="${t.accent}">${esc(eyebrow)}</text>
     ${titleLines(lines, 48, titleBaseline, t)}
     <text x="48" y="${bylineY}" font-family="DM Sans" font-size="26" fill="${t.text}" fill-opacity="0.65">${esc(`${bylinePrefix} · ${t.site}`)}</text>
@@ -103,25 +126,25 @@ export const PAGE_TYPES: Record<string, PageType> = {
   blog: {
     name: "blog",
     description: "Blog post (photo, category chip, title, byline)",
-    fields: ["title", "label", "image"],
+    fields: ["title", "label", "image", "logo"],
     render: renderBlog,
   },
   portfolio: {
     name: "portfolio",
     description: "Portfolio project (The build eyebrow, tag chip)",
-    fields: ["title", "label", "image"],
+    fields: ["title", "label", "image", "logo"],
     render: (o, t) => renderEyebrow(o, "The build", "Portfolio", t),
   },
   service: {
     name: "service",
     description: "Service page (Services eyebrow, service chip)",
-    fields: ["title", "label", "image"],
+    fields: ["title", "label", "image", "logo"],
     render: (o, t) => renderEyebrow(o, "Services", "MrDemonWolf, Inc.", t),
   },
   default: {
     name: "default",
-    description: "Site default (brand howl card, no fields)",
-    fields: [],
+    description: "Site default (brand howl card)",
+    fields: ["logo"],
     render: renderDefault,
   },
 };

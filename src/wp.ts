@@ -7,6 +7,8 @@ export type Pulled = {
   label?: string;
   /** featured image URL (may not be fetchable cross-origin; caller handles) */
   imageUrl?: string;
+  /** site icon URL from the REST index, same cross-origin caveat */
+  logoUrl?: string;
   note?: string;
 };
 
@@ -40,12 +42,32 @@ const BASES: Record<Pulled["type"], string[]> = {
   default: ["pages", "posts"],
 };
 
+// The REST index carries the Settings > Site Identity icon. Free, one request,
+// and it is the closest thing WordPress exposes to "the logo for this site".
+// ponytail: no /favicon.ico fallback - .ico decodes nowhere useful and the
+// upload box already covers a miss.
+async function siteIcon(origin: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(`${origin}/wp-json/`);
+    if (!res.ok) return undefined;
+    const idx = (await res.json()) as { site_icon_url?: string };
+    return idx?.site_icon_url || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function pullFromUrl(raw: string): Promise<Pulled> {
   const url = new URL(raw);
   const type = typeFor(url.pathname);
   const slug = url.pathname.split("/").filter(Boolean).pop() || "";
+  const logoPromise = siteIcon(url.origin);
   if (!slug || type === "default") {
-    return { type, note: "No slug in that URL; using the site default card." };
+    return {
+      type,
+      logoUrl: await logoPromise,
+      note: "No slug in that URL; using the site default card.",
+    };
   }
 
   for (const base of BASES[type]) {
@@ -65,6 +87,7 @@ export async function pullFromUrl(raw: string): Promise<Pulled> {
         title: decode(item.title.rendered),
         label: cat ? decode(cat) : undefined,
         imageUrl: media,
+        logoUrl: await logoPromise,
       };
     } catch {
       // CORS or network: try the next base
@@ -72,6 +95,7 @@ export async function pullFromUrl(raw: string): Promise<Pulled> {
   }
   return {
     type,
+    logoUrl: await logoPromise,
     note: "Could not reach the WordPress REST API for that URL (CORS or not found). Fill the fields manually.",
   };
 }
