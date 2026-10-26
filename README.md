@@ -32,7 +32,7 @@ Design in code. Ship cards that howl.
   is set. **Reset to wolf mark** puts it back.
 - **Static deploy** - plain Vite build served from Cloudflare Workers
   static assets, gated by Cloudflare Access, deployed by the bundled
-  Actions workflow on every push to `main`.
+  Actions workflow after CI passes on `main`. Never deployed from a laptop.
 
 ## Getting Started
 
@@ -108,7 +108,8 @@ Cloudflare Access, so you sign in before the page loads.
 - `bun run preview` - serve the production build locally
 - `bun run check` - type-check and run the template self-check
 - `bun run check-types` - type-check only
-- `bun run deploy` - build and publish to Cloudflare Workers
+- `bun run deploy` - build and publish to Cloudflare Workers (GitHub Actions on
+  `main` only; refused on a laptop)
 
 ### Code Quality
 
@@ -133,7 +134,8 @@ mrdemonwolf-og-tool/
 │   ├── selfcheck.ts         # runnable template guard
 │   └── fonts/               # vendored TTFs
 ├── wrangler.jsonc            # Workers static-assets config
-└── .github/workflows/deploy.yml # build + deploy to Cloudflare Workers
+├── .github/workflows/ci.yml     # checks every PR and push to main
+└── .github/workflows/deploy.yml # deploys after CI passes on main
 ```
 
 ## License
